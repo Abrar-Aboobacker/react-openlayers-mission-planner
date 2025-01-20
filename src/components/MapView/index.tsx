@@ -22,9 +22,8 @@ interface Waypoint {
 interface MapComponentProps {
   isDrawing: boolean;
   setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
-  setModalData: React.Dispatch<React.SetStateAction<Waypoint[]>>;
+  setModalData:any
 }
-
 const MapComponent: React.FC<MapComponentProps> = ({ isDrawing, setIsDrawing, setModalData }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const sourceRef = useRef<VectorSource>(new VectorSource());
