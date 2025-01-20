@@ -21,7 +21,7 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
   const sourceRef = useRef(new VectorSource());
   useEffect(() => {
     const map = new OpenLayersMap({  // Using renamed import
-      target: mapRef.current,
+      target: mapRef.current ?? undefined,
       layers: [
         new TileLayer({
           source: new OSM(),
@@ -45,13 +45,13 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
       map.addInteraction(draw);
 
       draw.on('drawend', (event) => {
-        const lineString = event.feature.getGeometry().getCoordinates();
-        const waypoints = lineString.map((coord, index) => ({
+        const lineString:any = event?.feature?.getGeometry()?.getCoordinates();
+        const waypoints = lineString.map((coord: { lat: number; lng: number }, index: number) => ({
           id: `WP(${String(index).padStart(2, '0')})`,
           coordinates: coord,
         }));
 
-        const distances = waypoints.slice(1).map((_, index) => {
+        const distances = waypoints.slice(1).map((_:any, index:number) => {
           return turf.distance(
             turf.point(waypoints[index].coordinates),
             turf.point(waypoints[index + 1].coordinates),
@@ -59,7 +59,7 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
           );
         });
 
-        const modalData = waypoints.map((wp, index) => ({
+        const modalData = waypoints.map((wp:any, index:number) => ({
           ...wp,
           distance: distances[index] || 0,
         }));
