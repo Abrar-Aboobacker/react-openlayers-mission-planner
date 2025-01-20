@@ -1,6 +1,6 @@
 import "ol/ol.css";
 import React, { useEffect, useRef } from "react";
-import {  View } from "ol";
+import { View } from "ol";
 import OpenLayersMap from 'ol/Map';
 import { Draw } from 'ol/interaction';
 import { OSM } from "ol/source";
@@ -9,19 +9,31 @@ import TileLayer from "ol/layer/Tile";
 import VectorLayer from "ol/layer/Vector";
 import { fromLonLat } from "ol/proj";
 import * as turf from '@turf/turf';
+import { Feature } from 'ol';
+import { LineString } from 'ol/geom';
+import { Coordinate } from 'ol/coordinate';
 
-interface MapComponentProps{
-  isDrawing:boolean;
-  setIsDrawing:React.Dispatch<React.SetStateAction<boolean>>;
-  setModalData:React.Dispatch<React.SetStateAction<any>>;
+interface Waypoint {
+  id: string;
+  coordinates: Coordinate;
+  distance?: number;
 }
 
-const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setModalData }) => {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const sourceRef = useRef(new VectorSource());
+interface MapComponentProps {
+  isDrawing: boolean;
+  setIsDrawing: React.Dispatch<React.SetStateAction<boolean>>;
+  setModalData: React.Dispatch<React.SetStateAction<Waypoint[]>>;
+}
+
+const MapComponent: React.FC<MapComponentProps> = ({ isDrawing, setIsDrawing, setModalData }) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<VectorSource>(new VectorSource());
+
   useEffect(() => {
-    const map = new OpenLayersMap({  // Using renamed import
-      target: mapRef.current ?? undefined,
+    if (!mapRef.current) return;
+
+    const map = new OpenLayersMap({
+      target: mapRef.current,
       layers: [
         new TileLayer({
           source: new OSM(),
@@ -31,7 +43,7 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
         }),
       ],
       view: new View({
-        center: fromLonLat([77.594566, 12.9715987]), // Fixed coordinate order: [longitude, latitude]
+        center: fromLonLat([77.594566, 12.9715987]),
         zoom: 12,
       }),
     });
@@ -45,21 +57,31 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
       map.addInteraction(draw);
 
       draw.on('drawend', (event) => {
-        const lineString:any = event?.feature?.getGeometry()?.getCoordinates();
-        const waypoints = lineString.map((coord: { lat: number; lng: number }, index: number) => ({
+        const feature = event.feature as Feature<LineString>;
+        const geometry = feature.getGeometry();
+        
+        if (!geometry) return;
+        
+        const coordinates = geometry.getCoordinates();
+        const waypoints: Waypoint[] = coordinates.map((coord, index) => ({
           id: `WP(${String(index).padStart(2, '0')})`,
           coordinates: coord,
         }));
 
-        const distances = waypoints.slice(1).map((_:any, index:number) => {
-          return turf.distance(
-            turf.point(waypoints[index].coordinates),
-            turf.point(waypoints[index + 1].coordinates),
-            { units: 'meters' }
-          );
+        const distances = waypoints.slice(1).map((_, index) => {
+          const point1 = turf.point([
+            waypoints[index].coordinates[0],
+            waypoints[index].coordinates[1]
+          ]);
+          const point2 = turf.point([
+            waypoints[index + 1].coordinates[0],
+            waypoints[index + 1].coordinates[1]
+          ]);
+          
+          return turf.distance(point1, point2, { units: 'meters' });
         });
 
-        const modalData = waypoints.map((wp:any, index:number) => ({
+        const modalData: Waypoint[] = waypoints.map((wp, index) => ({
           ...wp,
           distance: distances[index] || 0,
         }));
@@ -71,14 +93,13 @@ const MapComponent:React.FC<MapComponentProps>= ({ isDrawing, setIsDrawing, setM
     }
 
     return () => {
-      map.setTarget(null);
+      map.setTarget(undefined);
     };
   }, [isDrawing, setIsDrawing, setModalData]);
 
-
   return (
     <div
-      style={{ position: "absolute", top: 0, bottom: 0, width: "100%" }}
+      className="absolute inset-0 w-full"
       ref={mapRef}
     />
   );
