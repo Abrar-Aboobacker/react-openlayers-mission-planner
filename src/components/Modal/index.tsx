@@ -15,27 +15,30 @@ import {
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 
-
-interface ModalComponentProps {
-  data:any;
-  onClose:React.Dispatch<React.SetStateAction<boolean>>;
+interface WaypointData {
+  id: number;
+  coordinates: [number, number];
+  distance: number;
 }
 
-const ModalComponent:React.FC<ModalComponentProps> = ({ data, onClose }) => {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  // const [selectedWaypoint, setSelectedWaypoint] = React.useState(null);
+interface ModalComponentProps {
+  data: WaypointData[];
+  onClose: () => void;
+}
 
-  const handleMenuOpen = (event, waypoint) => {
+const ModalComponent: React.FC<ModalComponentProps> = ({ data, onClose }) => {
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [_, setSelectedWaypoint] = React.useState<WaypointData | null>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, waypoint: WaypointData) => {
     setAnchorEl(event.currentTarget);
-    // setSelectedWaypoint(waypoint);
+    setSelectedWaypoint(waypoint);
   };
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-    // setSelectedWaypoint(null);
+    setSelectedWaypoint(null);
   };
-
-
 
   return (
     <Modal open={true} onClose={onClose}>
@@ -87,10 +90,10 @@ const ModalComponent:React.FC<ModalComponentProps> = ({ data, onClose }) => {
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
         >
-          <MenuItem onClick={()=>console.log('clicked')}>
+          <MenuItem onClick={() => console.log('clicked')}>
             Insert Polygon Before
           </MenuItem>
-          <MenuItem onClick={()=>console.log('clicked')}>
+          <MenuItem onClick={() => console.log('clicked')}>
             Insert Polygon After
           </MenuItem>
         </Menu>
